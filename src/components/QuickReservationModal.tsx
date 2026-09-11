@@ -1,5 +1,17 @@
 import { useState, useEffect, FormEvent } from 'react';
-import { X, Calendar, Clock, Car, Phone, User, CheckCircle2, ShieldCheck } from 'lucide-react';
+import {
+  X,
+  Calendar,
+  Clock,
+  Car,
+  Phone,
+  User,
+  CheckCircle2,
+  ShieldCheck,
+  MessageCircle,
+  Copy,
+  ExternalLink,
+} from 'lucide-react';
 import { SERVICES_DATA } from '../data/mockData';
 
 interface QuickReservationModalProps {
@@ -23,6 +35,10 @@ export default function QuickReservationModal({
   const [time, setTime] = useState('10:00');
   const [notes, setNotes] = useState('');
   const [isSuccess, setIsSuccess] = useState(false);
+  const [copiedText, setCopiedText] = useState(false);
+  const [reservationSummary, setReservationSummary] = useState('');
+
+  const KAKAO_CHAT_URL = 'https://pf.kakao.com/_xncxlrX/chat';
 
   useEffect(() => {
     if (defaultCategory) setCategory(defaultCategory);
@@ -31,17 +47,60 @@ export default function QuickReservationModal({
 
   if (!isOpen) return null;
 
+  const categoryLabels: Record<string, string> = {
+    '01': '엔진 및 미션 계통 점검 (경고등, 누유, 출력저하)',
+    '02': '제조사 규격 소모품 및 오일 교환',
+    '03': '1급 판금·도장 및 차체 보험 수리',
+    '04': '수입차 전용 진단 및 전자제어',
+    '05': '타이어 교체 및 3D 휠 얼라인먼트',
+    '06': '하체 소음 및 브레이크 제동 계통',
+    '07': '정기 종합 정밀 검사',
+  };
+
+  const generateReservationText = () => {
+    const selectedCategoryTitle = categoryLabels[category] || category;
+    return `[LJ모터스 정비 예약 신청]
+• 고객명: ${name}
+• 연락처: ${phone}
+• 차종/모델: ${carModel}
+• 희망일시: ${date} ${time}
+• 정비항목: ${selectedCategoryTitle}
+• 요청사항: ${notes.trim() ? notes.trim() : '사전 예약 방문 요청'}
+• 매장위치: 고양시 덕양구 원흥5로4 1층 102~104호 (디올리치빌딩)`;
+  };
+
   const handleSubmit = (e: FormEvent) => {
     e.preventDefault();
     if (!name || !phone || !carModel || !date) {
       alert('성함, 연락처, 차종, 희망 예약일을 모두 입력해 주세요.');
       return;
     }
+
+    const summary = generateReservationText();
+    setReservationSummary(summary);
+
+    // 1. Automatically copy to clipboard
+    if (navigator.clipboard) {
+      navigator.clipboard.writeText(summary).catch(() => {});
+    }
+
+    // 2. Open KakaoTalk channel 1:1 chat window automatically
+    window.open(KAKAO_CHAT_URL, '_blank');
+
     setIsSuccess(true);
+  };
+
+  const handleCopyAgain = () => {
+    if (navigator.clipboard && reservationSummary) {
+      navigator.clipboard.writeText(reservationSummary);
+      setCopiedText(true);
+      setTimeout(() => setCopiedText(false), 2000);
+    }
   };
 
   const handleClose = () => {
     setIsSuccess(false);
+    setCopiedText(false);
     onClose();
   };
 
@@ -56,12 +115,12 @@ export default function QuickReservationModal({
             </div>
             <div>
               <h3 className="font-bold text-base text-[#f8f9ff]">간편 정비 예약 신청</h3>
-              <p className="text-xs text-[#c3c7cc]">원흥역 1·2번 출구 앞 LJ 모터스</p>
+              <p className="text-xs text-[#c3c7cc]">카카오톡 1:1 채널 실시간 자동 연동</p>
             </div>
           </div>
           <button
             onClick={handleClose}
-            className="p-1 rounded-lg text-gray-400 hover:text-white hover:bg-white/10 transition-colors"
+            className="p-1 rounded-lg text-gray-400 hover:text-white hover:bg-white/10 transition-colors cursor-pointer"
             aria-label="닫기"
           >
             <X className="w-5 h-5" />
@@ -71,35 +130,78 @@ export default function QuickReservationModal({
         {/* Modal Body */}
         <div className="p-6">
           {isSuccess ? (
-            <div className="text-center py-6 space-y-4">
-              <div className="w-14 h-14 rounded-full bg-green-100 text-green-600 flex items-center justify-center mx-auto">
-                <CheckCircle2 className="w-8 h-8" />
+            <div className="text-center py-2 space-y-4 animate-fadeIn">
+              <div className="w-14 h-14 rounded-full bg-[#fee500] text-[#191919] flex items-center justify-center mx-auto shadow-md">
+                <MessageCircle className="w-8 h-8 fill-[#191919]" />
               </div>
-              <h4 className="text-xl font-bold text-[#0d1c2f]">예약 신청이 접수되었습니다!</h4>
-              <p className="text-xs sm:text-sm text-[#44474a] leading-relaxed max-w-sm mx-auto">
-                <strong>{name}</strong> 고객님, 희망 일자(<strong>{date} {time}</strong>)로 정비 예약이
-                접수되었습니다. 담당 어드바이저가 확인 후 30분 이내로 확정 전화를 드리겠습니다.
-              </p>
-              <div className="p-4 bg-gray-50 rounded-xl text-left text-xs space-y-1.5 border border-gray-200">
-                <div>• 예약 차종: <span className="font-semibold text-gray-800">{carModel}</span></div>
-                <div>• 정비 위치: <span className="font-semibold text-gray-800">고양시 덕양구 원흥5로4 1층 102~104호 (디올리치빌딩)</span></div>
-                <div>• 문의 전화: <span className="font-semibold text-[#7e5700]">010-8848-6134 / 010-5244-6477</span></div>
+
+              <div>
+                <h4 className="text-lg sm:text-xl font-black text-[#0d1c2f]">
+                  카카오톡 상담창으로 자동 연결되었습니다!
+                </h4>
+                <p className="text-xs sm:text-sm text-[#44474a] mt-1 leading-relaxed">
+                  <strong>{name}</strong> 고객님의 예약 신청 내용이 <span className="text-[#7e5700] font-bold">클립보드에 자동 복사</span>되었습니다.
+                </p>
               </div>
-              <div className="flex flex-col sm:flex-row gap-2 pt-1">
+
+              {/* Kakao Step Guidance Banner */}
+              <div className="p-3.5 bg-[#fee500]/20 border border-[#fee500] rounded-xl text-left text-xs space-y-1">
+                <div className="font-bold text-[#191919] flex items-center gap-1.5">
+                  <span className="w-4 h-4 rounded-full bg-[#fee500] text-[#191919] flex items-center justify-center text-[10px] font-black shrink-0">
+                    !
+                  </span>
+                  <span>카카오톡 전송 방법</span>
+                </div>
+                <p className="text-gray-700 leading-relaxed pl-5">
+                  새 창으로 열린 <strong>LJ모터스 카카오톡 채팅창</strong> 입력란에 <span className="font-bold underline decoration-[#7e5700]">붙여넣기 (Ctrl+V 또는 길게 터치 후 붙여넣기)</span>하시면 사장님께 즉시 예약 메시지가 전송됩니다.
+                </p>
+              </div>
+
+              {/* Summary Preview Box */}
+              <div className="p-3.5 bg-gray-50 rounded-xl text-left text-xs space-y-1.5 border border-gray-200">
+                <div className="flex items-center justify-between border-b border-gray-200 pb-1 mb-1">
+                  <span className="font-bold text-gray-700">전송 예약 내용 미리보기</span>
+                  <button
+                    onClick={handleCopyAgain}
+                    className="text-[11px] font-bold text-[#7e5700] hover:underline flex items-center gap-1 cursor-pointer"
+                  >
+                    <Copy className="w-3 h-3" />
+                    <span>{copiedText ? '복사 완료!' : '내용 다시 복사'}</span>
+                  </button>
+                </div>
+                <pre className="font-sans whitespace-pre-wrap text-[11px] sm:text-xs text-gray-800 leading-relaxed">
+                  {reservationSummary}
+                </pre>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="flex flex-col gap-2 pt-1">
                 <a
-                  href="https://pf.kakao.com/_xncxlrX"
+                  href={KAKAO_CHAT_URL}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="flex-1 py-3 rounded-lg bg-[#fee500] hover:bg-[#fad800] text-[#191919] font-bold text-xs flex items-center justify-center gap-1.5 border border-[#e6ce00] transition-colors"
+                  className="w-full py-3.5 rounded-xl bg-[#fee500] hover:bg-[#fad800] text-[#191919] font-black text-sm flex items-center justify-center gap-2 border border-[#e6ce00] shadow-md transition-all hover:scale-[1.01] active:scale-98"
                 >
-                  <span>카카오톡 1:1 상담 연결</span>
+                  <MessageCircle className="w-4 h-4 fill-[#191919]" />
+                  <span>카카오톡 1:1 채팅창 열기 (메시지 전송)</span>
+                  <ExternalLink className="w-3.5 h-3.5" />
                 </a>
-                <button
-                  onClick={handleClose}
-                  className="flex-1 py-3 rounded-lg bg-[#7e5700] text-white font-bold text-xs hover:bg-[#604100] transition-colors"
-                >
-                  확인 완료
-                </button>
+
+                <div className="flex gap-2">
+                  <a
+                    href="tel:010-8848-6134"
+                    className="flex-1 py-2.5 rounded-lg bg-gray-100 hover:bg-gray-200 text-gray-800 font-bold text-xs flex items-center justify-center gap-1.5 border border-gray-300 transition-colors"
+                  >
+                    <Phone className="w-3.5 h-3.5 text-[#7e5700]" />
+                    <span>전화 직통 상담</span>
+                  </a>
+                  <button
+                    onClick={handleClose}
+                    className="flex-1 py-2.5 rounded-lg bg-gray-800 hover:bg-black text-white font-bold text-xs transition-colors cursor-pointer"
+                  >
+                    창 닫기
+                  </button>
+                </div>
               </div>
             </div>
           ) : (
@@ -228,10 +330,14 @@ export default function QuickReservationModal({
 
               <button
                 type="submit"
-                className="w-full py-3 rounded-lg bg-[#7e5700] text-white font-bold text-sm hover:bg-[#604100] transition-colors cursor-pointer"
+                className="w-full py-3.5 rounded-xl bg-[#fee500] hover:bg-[#fad800] text-[#191919] font-black text-sm transition-all shadow-md flex items-center justify-center gap-2 cursor-pointer border border-[#e6ce00] active:scale-98"
               >
-                예약 신청 완료하기
+                <MessageCircle className="w-4 h-4 fill-[#191919]" />
+                <span>카카오톡 채널로 예약 신청하기</span>
               </button>
+              <p className="text-[11px] text-center text-gray-500">
+                ⚡ 신청 즉시 작성하신 내용이 복사되며 카카오톡 1:1 상담창이 열립니다.
+              </p>
             </form>
           )}
         </div>

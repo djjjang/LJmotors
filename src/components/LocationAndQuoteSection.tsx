@@ -39,6 +39,20 @@ export default function LocationAndQuoteSection({
 
   const [copied, setCopied] = useState(false);
   const [submittedMessage, setSubmittedMessage] = useState<string | null>(null);
+  const [quoteSummary, setQuoteSummary] = useState('');
+  const [copiedSummary, setCopiedSummary] = useState(false);
+
+  const KAKAO_CHAT_URL = 'https://pf.kakao.com/_xncxlrX/chat';
+
+  const categoryMap: Record<string, string> = {
+    '01': '엔진 및 미션 점검 (경고등, 누유, 출력저하)',
+    '02': '제조사 규격 정기점검 및 오일류 교환',
+    '03': '1급 판금 도장 및 차체 보험수리',
+    '04': '공조 에어컨 가스 및 전자제어 장비 점검',
+    '05': '타이어 교체 및 3D 휠 얼라인먼트',
+    '06': '하체 소음 / 브레이크 제동 계통 점검',
+    '07': '기타 종합 정밀 진단',
+  };
 
   useEffect(() => {
     if (preselectedCategory) {
@@ -52,6 +66,17 @@ export default function LocationAndQuoteSection({
     setTimeout(() => setCopied(false), 2500);
   };
 
+  const generateQuoteSummaryText = () => {
+    const selectedCategoryTitle = categoryMap[formData.serviceCategory] || formData.serviceCategory;
+    return `[LJ모터스 정비 견적 문의]
+• 고객명: ${formData.customerName}
+• 연락처: ${formData.phone}
+• 차종/모델: ${formData.carModel}${formData.carYearAndMileage ? ` (${formData.carYearAndMileage})` : ''}
+• 문의항목: ${selectedCategoryTitle}
+• 증상 및 문의내용: ${formData.symptoms.trim() ? formData.symptoms.trim() : '상세 견적 및 점검 요청'}
+• 매장위치: 고양시 덕양구 원흥5로4 1층 102~104호 (디올리치빌딩)`;
+  };
+
   const handleSubmit = (e: FormEvent) => {
     e.preventDefault();
     if (!formData.customerName || !formData.phone || !formData.carModel) {
@@ -63,8 +88,19 @@ export default function LocationAndQuoteSection({
       return;
     }
 
+    const summary = generateQuoteSummaryText();
+    setQuoteSummary(summary);
+
+    // 1. Copy quote summary automatically to clipboard
+    if (navigator.clipboard) {
+      navigator.clipboard.writeText(summary).catch(() => {});
+    }
+
+    // 2. Open KakaoTalk channel chat automatically
+    window.open(KAKAO_CHAT_URL, '_blank');
+
     setSubmittedMessage(
-      `[접수 완료] ${formData.customerName} 고객님, ${formData.carModel} 견적 문의가 성공적으로 접수되었습니다. 20년 경력 마스터가 30분 이내(${formData.phone})로 상세 견적을 유선 또는 문자로 안내해 드리겠습니다.`
+      `[접수 완료] ${formData.customerName} 고객님, ${formData.carModel} 견적 문의 내용이 복사되었으며 카카오톡 상담창이 열렸습니다.`
     );
 
     if (onSubmittedSuccess) {
@@ -72,8 +108,18 @@ export default function LocationAndQuoteSection({
     }
   };
 
+  const handleCopySummaryAgain = () => {
+    if (navigator.clipboard && quoteSummary) {
+      navigator.clipboard.writeText(quoteSummary);
+      setCopiedSummary(true);
+      setTimeout(() => setCopiedSummary(false), 2000);
+    }
+  };
+
   const handleReset = () => {
     setSubmittedMessage(null);
+    setQuoteSummary('');
+    setCopiedSummary(false);
     setFormData({
       customerName: '',
       phone: '',
@@ -285,19 +331,80 @@ export default function LocationAndQuoteSection({
             </div>
 
             {submittedMessage ? (
-              <div className="p-6 rounded-xl bg-green-50 border border-green-200 text-green-900 space-y-4 animate-fadeIn">
-                <div className="flex items-center gap-2 text-green-700 font-bold text-lg">
-                  <CheckCircle2 className="w-6 h-6" />
-                  <span>견적 문의가 정상 접수되었습니다!</span>
+              <div className="p-6 rounded-2xl bg-amber-50/70 border border-amber-200 text-[#0d1c2f] space-y-4 animate-fadeIn">
+                <div className="w-14 h-14 rounded-full bg-[#fee500] text-[#191919] flex items-center justify-center mx-auto shadow-md">
+                  <MessageCircle className="w-8 h-8 fill-[#191919]" />
                 </div>
-                <p className="text-sm leading-relaxed">{submittedMessage}</p>
-                <div className="pt-2">
-                  <button
-                    onClick={handleReset}
-                    className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg font-semibold text-xs transition-colors cursor-pointer"
+
+                <div className="text-center space-y-1">
+                  <h4 className="text-lg sm:text-xl font-black text-[#0d1c2f]">
+                    카카오톡 상담창으로 자동 연결되었습니다!
+                  </h4>
+                  <p className="text-xs sm:text-sm text-[#44474a] leading-relaxed">
+                    <strong>{formData.customerName}</strong> 고객님이 작성하신 견적 문의 내용이{' '}
+                    <span className="text-[#7e5700] font-bold">클립보드에 자동 복사</span>되었습니다.
+                  </p>
+                </div>
+
+                {/* Kakao Step Guidance Banner */}
+                <div className="p-3.5 bg-[#fee500]/20 border border-[#fee500] rounded-xl text-left text-xs space-y-1">
+                  <div className="font-bold text-[#191919] flex items-center gap-1.5">
+                    <span className="w-4 h-4 rounded-full bg-[#fee500] text-[#191919] flex items-center justify-center text-[10px] font-black shrink-0">
+                      !
+                    </span>
+                    <span>카카오톡 전송 방법</span>
+                  </div>
+                  <p className="text-gray-700 leading-relaxed pl-5">
+                    새 창으로 열린 <strong>LJ모터스 카카오톡 채팅창</strong>에{' '}
+                    <span className="font-bold underline decoration-[#7e5700]">붙여넣기 (Ctrl+V 또는 길게 터치 후 붙여넣기)</span>하시면 사장님께 즉시 견적 문의 메시지가 전송됩니다.
+                  </p>
+                </div>
+
+                {/* Summary Preview Box */}
+                <div className="p-4 bg-white rounded-xl text-left text-xs space-y-1.5 border border-gray-200 shadow-2xs">
+                  <div className="flex items-center justify-between border-b border-gray-200 pb-1.5 mb-1">
+                    <span className="font-bold text-gray-700">전송 문의 내용 미리보기</span>
+                    <button
+                      onClick={handleCopySummaryAgain}
+                      className="text-[11px] font-bold text-[#7e5700] hover:underline flex items-center gap-1 cursor-pointer"
+                    >
+                      <Copy className="w-3 h-3" />
+                      <span>{copiedSummary ? '복사 완료!' : '내용 다시 복사'}</span>
+                    </button>
+                  </div>
+                  <pre className="font-sans whitespace-pre-wrap text-[11px] sm:text-xs text-gray-800 leading-relaxed">
+                    {quoteSummary}
+                  </pre>
+                </div>
+
+                {/* Action Buttons */}
+                <div className="space-y-2 pt-1">
+                  <a
+                    href={KAKAO_CHAT_URL}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="w-full py-3.5 rounded-xl bg-[#fee500] hover:bg-[#fad800] text-[#191919] font-black text-sm sm:text-base flex items-center justify-center gap-2 border border-[#e6ce00] shadow-md transition-all hover:scale-[1.01] active:scale-98"
                   >
-                    추가 견적 문의 작성하기
-                  </button>
+                    <MessageCircle className="w-4 h-4 sm:w-5 sm:h-5 fill-[#191919]" />
+                    <span>카카오톡 1:1 채팅창 열기 (메시지 전송)</span>
+                    <ExternalLink className="w-4 h-4" />
+                  </a>
+
+                  <div className="flex flex-col sm:flex-row gap-2">
+                    <a
+                      href="tel:010-8848-6134"
+                      className="flex-1 py-2.5 rounded-lg bg-white hover:bg-gray-50 text-gray-800 font-bold text-xs flex items-center justify-center gap-1.5 border border-gray-300 transition-colors"
+                    >
+                      <Phone className="w-3.5 h-3.5 text-[#7e5700]" />
+                      <span>전화 직통 문의 (010-8848-6134)</span>
+                    </a>
+                    <button
+                      onClick={handleReset}
+                      className="flex-1 py-2.5 rounded-lg bg-gray-800 hover:bg-black text-white font-bold text-xs transition-colors cursor-pointer"
+                    >
+                      새로운 견적 문의 작성
+                    </button>
+                  </div>
                 </div>
               </div>
             ) : (
@@ -418,11 +525,14 @@ export default function LocationAndQuoteSection({
 
                 <button
                   type="submit"
-                  className="w-full py-3.5 sm:py-4 rounded-lg bg-[#7e5700] text-white font-bold text-sm sm:text-base shadow-md hover:bg-[#604100] transition-all flex items-center justify-center gap-2 active:scale-98 cursor-pointer mt-2"
+                  className="w-full py-3.5 sm:py-4 rounded-xl bg-[#fee500] hover:bg-[#fad800] text-[#191919] font-black text-sm sm:text-base shadow-md transition-all flex items-center justify-center gap-2 active:scale-98 cursor-pointer mt-2 border border-[#e6ce00]"
                 >
-                  <Send className="w-4 h-4" />
-                  <span>견적 문의하기 (무료 상담)</span>
+                  <MessageCircle className="w-5 h-5 fill-[#191919]" />
+                  <span>카카오톡 채널로 견적 문의 전송하기</span>
                 </button>
+                <p className="text-[11px] text-center text-gray-500">
+                  ⚡ 클릭 즉시 작성 내용이 복사되며 LJ모터스 카카오톡 1:1 상담창이 열립니다.
+                </p>
               </form>
             )}
           </div>
