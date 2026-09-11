@@ -33,7 +33,7 @@ export default function PolicyModal({
         <div className="p-6 space-y-4">
           <p className="text-sm text-gray-700 leading-relaxed whitespace-pre-line">{content}</p>
           <div className="p-3 rounded-lg bg-gray-50 text-xs text-gray-500 border border-gray-200">
-            문의사항이 있으시면 고객지원센터(010-5244-6477)로 연락주시면 친절히 안내해 드립니다.
+            문의사항이 있으시면 고객지원센터(010-8848-6134)로 연락주시면 친절히 안내해 드립니다.
           </div>
           <button
             onClick={onClose}

@@ -379,7 +379,7 @@ export default function DirectionsModal({
         {/* Footer Actions */}
         <div className="p-4 sm:px-6 bg-gray-50 border-t border-gray-200 flex flex-col sm:flex-row items-center justify-between gap-3 shrink-0">
           <a
-            href="https://pf.kakao.com/_xncxlrX"
+            href="https://pf.kakao.com/_xncxlrX/chat"
             target="_blank"
             rel="noopener noreferrer"
             className="w-full sm:w-auto px-4 py-2.5 rounded-lg bg-[#fee500] hover:bg-[#fad800] text-[#191919] font-bold text-xs flex items-center justify-center gap-1.5 border border-[#e6ce00] transition-colors"

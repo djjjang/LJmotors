@@ -13,13 +13,16 @@ import QuickReservationModal from './components/QuickReservationModal';
 import BrandDetailModal from './components/BrandDetailModal';
 import PolicyModal from './components/PolicyModal';
 import DirectionsModal from './components/DirectionsModal';
+import ReservationLookupModal from './components/ReservationLookupModal';
 import { ServiceItem, BrandItem, QuoteFormData } from './types';
-import { Phone, Calendar, ArrowUp, MessageCircle } from 'lucide-react';
+import { Phone, Calendar, ArrowUp, MessageCircle, Search } from 'lucide-react';
 
 export default function App() {
   // Modal states
   const [reservationOpen, setReservationOpen] = useState(false);
   const [directionsOpen, setDirectionsOpen] = useState(false);
+  const [lookupOpen, setLookupOpen] = useState(false);
+  const [lookupInitialQuery, setLookupInitialQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('01');
   const [selectedBrandName, setSelectedBrandName] = useState<string>('');
   const [activeBrandModal, setActiveBrandModal] = useState<BrandItem | null>(null);
@@ -69,6 +72,12 @@ export default function App() {
     setActiveBrandModal(brand);
   };
 
+  // Open reservation lookup modal
+  const handleOpenLookup = (query = '') => {
+    setLookupInitialQuery(query);
+    setLookupOpen(true);
+  };
+
   // When user decides to book from brand modal
   const handleBookForBrand = (brandName: string) => {
     setSelectedBrandName(brandName);
@@ -93,6 +102,7 @@ export default function App() {
       <Header
         onOpenReservation={handleOpenReservation}
         onOpenDirections={handleOpenDirections}
+        onOpenLookup={() => handleOpenLookup()}
       />
 
       {/* Main Content Sections */}
@@ -125,6 +135,7 @@ export default function App() {
         <LocationAndQuoteSection
           preselectedCategory={quoteCategory}
           onOpenDirections={handleOpenDirections}
+          onOpenLookup={(q) => handleOpenLookup(q)}
           onSubmittedSuccess={(data: QuoteFormData) => {
             console.log('Quotation submitted:', data);
           }}
@@ -147,25 +158,35 @@ export default function App() {
           <ArrowUp className="w-4 h-4" />
         </button>
 
-        {/* KakaoTalk 1:1 Consultation Floating Button */}
+        {/* KakaoTalk 1:1 Direct Chat Consultation Floating Button */}
         <a
-          href="https://pf.kakao.com/_xncxlrX"
+          href="https://pf.kakao.com/_xncxlrX/chat"
           target="_blank"
           rel="noopener noreferrer"
           className="flex items-center gap-2 px-4 py-2.5 rounded-full bg-[#fee500] text-[#191919] border border-[#e6ce00] shadow-xl hover:bg-[#fad800] transition-all hover:scale-105 active:scale-95 group"
-          aria-label="카카오톡 1:1 상담 채널 바로가기"
+          aria-label="카카오톡 1:1 상담 채팅 바로가기"
         >
           <MessageCircle className="w-4 h-4 text-[#191919] fill-[#191919] group-hover:scale-110 transition-transform" />
           <span className="text-xs font-black text-[#191919] tracking-tight hidden sm:inline">카카오톡 상담</span>
           <span className="text-xs font-black text-[#191919] tracking-tight sm:hidden">카톡상담</span>
         </a>
 
+        {/* Check Reservation Floating Button */}
+        <button
+          onClick={() => handleOpenLookup()}
+          className="flex items-center gap-2 px-4 py-2.5 rounded-full bg-white text-[#0d1c2f] border border-gray-300 shadow-xl hover:bg-gray-50 transition-all hover:scale-105 active:scale-95 cursor-pointer"
+        >
+          <Search className="w-4 h-4 text-[#7e5700]" />
+          <span className="text-xs font-bold hidden sm:inline">예약내역 확인</span>
+          <span className="text-xs font-bold sm:hidden">예약확인</span>
+        </button>
+
         <a
-          href="tel:010-5244-6477"
+          href="tel:010-8848-6134"
           className="flex items-center gap-2 px-4 py-2.5 rounded-full bg-[#181c20] text-[#fdbe50] border border-[#fdbe50]/40 shadow-xl hover:bg-black transition-all hover:scale-105 active:scale-95"
         >
           <Phone className="w-4 h-4" />
-          <span className="text-xs font-bold text-white hidden sm:inline">010-5244-6477</span>
+          <span className="text-xs font-bold text-white hidden sm:inline">010-8848-6134</span>
           <span className="text-xs font-bold sm:hidden">전화상담</span>
         </a>
 
@@ -191,6 +212,15 @@ export default function App() {
         onClose={() => setReservationOpen(false)}
         defaultCategory={selectedCategory}
         defaultBrand={selectedBrandName}
+        onOpenLookup={(q) => handleOpenLookup(q)}
+      />
+
+      {/* Reservation Lookup / Verification Modal */}
+      <ReservationLookupModal
+        isOpen={lookupOpen}
+        onClose={() => setLookupOpen(false)}
+        initialQuery={lookupInitialQuery}
+        onOpenNewReservation={() => handleOpenReservation()}
       />
 
       {/* Brand Detail Modal */}

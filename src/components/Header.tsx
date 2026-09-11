@@ -1,12 +1,13 @@
 import { useState } from 'react';
-import { Wrench, Phone, Menu, X, Calendar } from 'lucide-react';
+import { Wrench, Phone, Menu, X, Calendar, Search } from 'lucide-react';
 
 interface HeaderProps {
   onOpenReservation: (category?: string) => void;
   onOpenDirections?: () => void;
+  onOpenLookup?: () => void;
 }
 
-export default function Header({ onOpenReservation, onOpenDirections }: HeaderProps) {
+export default function Header({ onOpenReservation, onOpenDirections, onOpenLookup }: HeaderProps) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const navLinks = [
@@ -62,18 +63,28 @@ export default function Header({ onOpenReservation, onOpenDirections }: HeaderPr
         </nav>
 
         {/* Trailing Action Controls */}
-        <div className="flex items-center gap-3 md:gap-5">
+        <div className="flex items-center gap-2 sm:gap-3 md:gap-4">
           <a
-            href="tel:010-5244-6477"
-            className="hidden sm:flex items-center gap-2 text-sm text-[#0d1c2f] hover:text-[#7e5700] transition-colors"
+            href="tel:010-8848-6134"
+            className="hidden xl:flex items-center gap-2 text-sm text-[#0d1c2f] hover:text-[#7e5700] transition-colors"
           >
             <Phone className="w-4 h-4 text-[#7e5700]" />
-            <span className="font-bold tracking-wide">010-5244-6477</span>
+            <span className="font-bold tracking-wide">010-8848-6134</span>
           </a>
+
+          {onOpenLookup && (
+            <button
+              onClick={() => onOpenLookup()}
+              className="inline-flex items-center justify-center gap-1.5 px-3 py-2 sm:py-2.5 rounded-lg border border-gray-300 hover:border-[#7e5700] bg-gray-50 hover:bg-white text-[#0d1c2f] hover:text-[#7e5700] text-xs sm:text-sm font-bold shadow-2xs transition-colors cursor-pointer"
+            >
+              <Search className="w-3.5 h-3.5 text-[#7e5700]" />
+              <span>예약 내역 확인</span>
+            </button>
+          )}
 
           <button
             onClick={() => onOpenReservation()}
-            className="inline-flex items-center justify-center gap-1.5 px-4 md:px-5 py-2.5 rounded-lg bg-[#7e5700] text-white text-sm font-bold shadow hover:bg-[#604100] transition-all active:scale-95 cursor-pointer"
+            className="inline-flex items-center justify-center gap-1.5 px-3.5 sm:px-4 md:px-5 py-2 sm:py-2.5 rounded-lg bg-[#7e5700] text-white text-xs sm:text-sm font-bold shadow hover:bg-[#604100] transition-all active:scale-95 cursor-pointer"
           >
             <Calendar className="w-4 h-4" />
             <span>간편 정비 예약</span>
@@ -93,7 +104,23 @@ export default function Header({ onOpenReservation, onOpenDirections }: HeaderPr
       {/* Mobile Menu Dropdown */}
       {mobileMenuOpen && (
         <div className="lg:hidden bg-white border-b border-gray-200 px-4 py-4 shadow-xl">
-          <div className="flex flex-col space-y-3 pb-3">
+          <div className="flex flex-col space-y-2 pb-3">
+            {onOpenLookup && (
+              <button
+                onClick={() => {
+                  setMobileMenuOpen(false);
+                  onOpenLookup();
+                }}
+                className="w-full text-left px-3 py-2.5 rounded-lg text-sm font-bold bg-[#eff4ff] text-[#0d1c2f] flex items-center justify-between cursor-pointer"
+              >
+                <div className="flex items-center gap-2">
+                  <Search className="w-4 h-4 text-[#7e5700]" />
+                  <span>예약 내역 실시간 확인</span>
+                </div>
+                <span className="text-[11px] text-[#7e5700] font-bold">조회</span>
+              </button>
+            )}
+
             {navLinks.map((link) => (
               <a
                 key={link.href}
@@ -104,7 +131,7 @@ export default function Header({ onOpenReservation, onOpenDirections }: HeaderPr
                     onOpenDirections();
                   }
                 }}
-                className="px-3 py-2 rounded-md text-sm font-semibold text-[#0d1c2f] hover:bg-[#eff4ff] transition-colors flex items-center justify-between"
+                className="px-3 py-2 rounded-md text-sm font-semibold text-[#0d1c2f] hover:bg-gray-50 transition-colors flex items-center justify-between"
               >
                 <span>{link.label}</span>
                 {link.isDirections && (
@@ -117,11 +144,11 @@ export default function Header({ onOpenReservation, onOpenDirections }: HeaderPr
           </div>
           <div className="pt-3 border-t border-gray-100 flex items-center justify-between">
             <a
-              href="tel:010-5244-6477"
+              href="tel:010-8848-6134"
               className="flex items-center gap-2 text-sm font-bold text-[#7e5700]"
             >
               <Phone className="w-4 h-4" />
-              <span>010-5244-6477</span>
+              <span>010-8848-6134</span>
             </a>
             <span className="text-xs text-gray-500">평일 08:30 ~ 18:30</span>
           </div>

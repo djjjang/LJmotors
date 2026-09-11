@@ -56,7 +56,7 @@ export default function Footer({ onOpenPolicyModal, onOpenDirections }: FooterPr
               영업시간: 평일 08:30 ~ 18:30 | 토요일 09:00 ~ 15:00 (일요일 예약 작업 가능)
             </div>
             <div>
-              대표번호: <span className="text-white font-bold">010-5244-6477</span> | 예약직통: <span className="text-white font-bold">010-8848-6134</span>
+              전화상담/예약직통: <a href="tel:010-8848-6134" className="text-white font-bold hover:underline">010-8848-6134</a>
             </div>
             <div>팩스(FAX): <span className="text-white font-semibold">070-7507-0123</span> | 애완견 동반 가능 🐶</div>
           </div>
@@ -69,7 +69,7 @@ export default function Footer({ onOpenPolicyModal, onOpenDirections }: FooterPr
                 20년 경력 마스터 소개 (정비 철학)
               </a>
               <a
-                href="https://pf.kakao.com/_xncxlrX"
+                href="https://pf.kakao.com/_xncxlrX/chat"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-[#fee500] hover:underline transition-colors font-medium flex items-center gap-1"

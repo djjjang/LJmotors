@@ -11,14 +11,19 @@ import {
   MessageCircle,
   Copy,
   ExternalLink,
+  Send,
+  Search,
 } from 'lucide-react';
 import { SERVICES_DATA } from '../data/mockData';
+import { saveReservation } from '../utils/reservationStorage';
+import { ReservationRecord } from '../types';
 
 interface QuickReservationModalProps {
   isOpen: boolean;
   onClose: () => void;
   defaultCategory?: string;
   defaultBrand?: string;
+  onOpenLookup?: (query?: string) => void;
 }
 
 export default function QuickReservationModal({
@@ -26,6 +31,7 @@ export default function QuickReservationModal({
   onClose,
   defaultCategory = '01',
   defaultBrand = '',
+  onOpenLookup,
 }: QuickReservationModalProps) {
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
@@ -37,8 +43,10 @@ export default function QuickReservationModal({
   const [isSuccess, setIsSuccess] = useState(false);
   const [copiedText, setCopiedText] = useState(false);
   const [reservationSummary, setReservationSummary] = useState('');
+  const [savedRecord, setSavedRecord] = useState<ReservationRecord | null>(null);
 
   const KAKAO_CHAT_URL = 'https://pf.kakao.com/_xncxlrX/chat';
+  const MASTER_PHONE = '010-8848-6134';
 
   useEffect(() => {
     if (defaultCategory) setCategory(defaultCategory);
@@ -57,9 +65,10 @@ export default function QuickReservationModal({
     '07': '정기 종합 정밀 검사',
   };
 
-  const generateReservationText = () => {
+  const generateReservationText = (recordId?: string) => {
     const selectedCategoryTitle = categoryLabels[category] || category;
     return `[LJ모터스 정비 예약 신청]
+• 예약번호: ${recordId || '발급중'}
 • 고객명: ${name}
 • 연락처: ${phone}
 • 차종/모델: ${carModel}
@@ -76,15 +85,30 @@ export default function QuickReservationModal({
       return;
     }
 
-    const summary = generateReservationText();
+    const selectedCategoryTitle = categoryLabels[category] || category;
+
+    // 1. Save to local reservation storage
+    const newRecord = saveReservation({
+      customerName: name,
+      phone,
+      carModel,
+      serviceCategory: selectedCategoryTitle,
+      preferredDate: date,
+      preferredTime: time,
+      notes,
+    });
+    setSavedRecord(newRecord);
+
+    // 2. Generate formatted message
+    const summary = generateReservationText(newRecord.id);
     setReservationSummary(summary);
 
-    // 1. Automatically copy to clipboard
+    // 3. Automatically copy to clipboard
     if (navigator.clipboard) {
       navigator.clipboard.writeText(summary).catch(() => {});
     }
 
-    // 2. Open KakaoTalk channel 1:1 chat window automatically
+    // 4. Open KakaoTalk channel chat window
     window.open(KAKAO_CHAT_URL, '_blank');
 
     setIsSuccess(true);
@@ -102,6 +126,10 @@ export default function QuickReservationModal({
     setIsSuccess(false);
     setCopiedText(false);
     onClose();
+  };
+
+  const getSmsLink = () => {
+    return `sms:${MASTER_PHONE}?body=${encodeURIComponent(reservationSummary)}`;
   };
 
   return (
@@ -136,24 +164,31 @@ export default function QuickReservationModal({
               </div>
 
               <div>
+                <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-green-100 text-green-800 text-xs font-bold mb-2">
+                  <CheckCircle2 className="w-3.5 h-3.5" />
+                  <span>예약 접수 완료 • 예약번호: {savedRecord?.id}</span>
+                </div>
                 <h4 className="text-lg sm:text-xl font-black text-[#0d1c2f]">
-                  카카오톡 상담창으로 자동 연결되었습니다!
+                  카카오톡 채널로 예약 내용이 전송 준비되었습니다!
                 </h4>
                 <p className="text-xs sm:text-sm text-[#44474a] mt-1 leading-relaxed">
-                  <strong>{name}</strong> 고객님의 예약 신청 내용이 <span className="text-[#7e5700] font-bold">클립보드에 자동 복사</span>되었습니다.
+                  <strong>{name}</strong> 고객님의 예약 내용이 <span className="text-[#7e5700] font-bold">클립보드에 자동 복사</span>되었습니다.
                 </p>
               </div>
 
-              {/* Kakao Step Guidance Banner */}
-              <div className="p-3.5 bg-[#fee500]/20 border border-[#fee500] rounded-xl text-left text-xs space-y-1">
-                <div className="font-bold text-[#191919] flex items-center gap-1.5">
+              {/* Kakao & SMS Guidance Notice */}
+              <div className="p-3.5 bg-amber-50 border border-amber-200 rounded-xl text-left text-xs space-y-1.5">
+                <div className="font-bold text-[#7e5700] flex items-center gap-1.5">
                   <span className="w-4 h-4 rounded-full bg-[#fee500] text-[#191919] flex items-center justify-center text-[10px] font-black shrink-0">
                     !
                   </span>
-                  <span>카카오톡 전송 방법</span>
+                  <span>카카오톡 채널 전송 및 사이트 링크 안내</span>
                 </div>
                 <p className="text-gray-700 leading-relaxed pl-5">
-                  새 창으로 열린 <strong>LJ모터스 카카오톡 채팅창</strong> 입력란에 <span className="font-bold underline decoration-[#7e5700]">붙여넣기 (Ctrl+V 또는 길게 터치 후 붙여넣기)</span>하시면 사장님께 즉시 예약 메시지가 전송됩니다.
+                  카카오톡 정책상 외부 웹사이트에서 메시지를 강제로 자동 발송할 수 없으므로, 채팅창에 입장 시 채널 웰컴 문구(사이트 링크)가 먼저 뜰 수 있습니다. 열린 채팅창 입력란에 <strong className="underline decoration-[#7e5700]">붙여넣기(Ctrl+V 또는 길게 터치) 후 전송</strong>을 눌러주시면 사장님께 즉시 전달됩니다.
+                </p>
+                <p className="text-blue-700 font-semibold pl-5 text-[11px]">
+                  💡 모바일에서는 아래 <strong>[문자(SMS)로 즉시 전송]</strong>을 누르시면 터치 한 번으로 사장님 휴대폰에 즉시 도착합니다!
                 </p>
               </div>
 
@@ -176,6 +211,7 @@ export default function QuickReservationModal({
 
               {/* Action Buttons */}
               <div className="flex flex-col gap-2 pt-1">
+                {/* Kakao 1:1 Chat */}
                 <a
                   href={KAKAO_CHAT_URL}
                   target="_blank"
@@ -183,13 +219,34 @@ export default function QuickReservationModal({
                   className="w-full py-3.5 rounded-xl bg-[#fee500] hover:bg-[#fad800] text-[#191919] font-black text-sm flex items-center justify-center gap-2 border border-[#e6ce00] shadow-md transition-all hover:scale-[1.01] active:scale-98"
                 >
                   <MessageCircle className="w-4 h-4 fill-[#191919]" />
-                  <span>카카오톡 1:1 채팅창 열기 (메시지 전송)</span>
+                  <span>카카오톡 1:1 채팅창 열기 (붙여넣기 후 전송)</span>
                   <ExternalLink className="w-3.5 h-3.5" />
                 </a>
 
+                {/* SMS Direct Send Button */}
+                <a
+                  href={getSmsLink()}
+                  className="w-full py-3 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs sm:text-sm flex items-center justify-center gap-2 shadow-sm transition-colors"
+                >
+                  <Send className="w-3.5 h-3.5" />
+                  <span>문자(SMS)로 사장님께 즉시 예약 전송 (원클릭)</span>
+                </a>
+
                 <div className="flex gap-2">
+                  {onOpenLookup && (
+                    <button
+                      onClick={() => {
+                        handleClose();
+                        onOpenLookup(savedRecord?.phone || name);
+                      }}
+                      className="flex-1 py-2.5 rounded-lg bg-gray-100 hover:bg-gray-200 text-gray-800 font-bold text-xs flex items-center justify-center gap-1.5 border border-gray-300 transition-colors cursor-pointer"
+                    >
+                      <Search className="w-3.5 h-3.5 text-[#7e5700]" />
+                      <span>내 예약 내역 확인하기</span>
+                    </button>
+                  )}
                   <a
-                    href="tel:010-8848-6134"
+                    href={`tel:${MASTER_PHONE}`}
                     className="flex-1 py-2.5 rounded-lg bg-gray-100 hover:bg-gray-200 text-gray-800 font-bold text-xs flex items-center justify-center gap-1.5 border border-gray-300 transition-colors"
                   >
                     <Phone className="w-3.5 h-3.5 text-[#7e5700]" />
@@ -197,9 +254,9 @@ export default function QuickReservationModal({
                   </a>
                   <button
                     onClick={handleClose}
-                    className="flex-1 py-2.5 rounded-lg bg-gray-800 hover:bg-black text-white font-bold text-xs transition-colors cursor-pointer"
+                    className="py-2.5 px-4 rounded-lg bg-gray-800 hover:bg-black text-white font-bold text-xs transition-colors cursor-pointer"
                   >
-                    창 닫기
+                    닫기
                   </button>
                 </div>
               </div>

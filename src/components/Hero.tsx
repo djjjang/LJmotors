@@ -68,7 +68,7 @@ export default function Hero({ onOpenReservation, onOpenDirections }: HeroProps)
               <span>간편 정비 예약하기</span>
             </button>
             <a
-              href="tel:010-5244-6477"
+              href="tel:010-8848-6134"
               className="inline-flex items-center gap-2 px-6 py-3.5 rounded-lg bg-black/40 backdrop-blur-md border border-white/30 text-[#f8f9ff] text-base font-semibold hover:bg-white/20 transition-all shadow-md"
             >
               <Phone className="w-5 h-5 text-[#fabc4d]" />
@@ -158,11 +158,11 @@ export default function Hero({ onOpenReservation, onOpenDirections }: HeroProps)
                 <span>오시는 길 (약도)</span>
               </button>
               <a
-                href="tel:010-5244-6477"
+                href="tel:010-8848-6134"
                 className="flex-1 py-2.5 rounded-lg bg-[#fdbe50] hover:bg-[#fabc4d] text-center text-xs font-bold text-[#281900] transition-colors flex items-center justify-center gap-1.5 shadow"
               >
                 <Phone className="w-4 h-4" />
-                <span>010-5244-6477</span>
+                <span>010-8848-6134</span>
               </a>
             </div>
           </div>

@@ -131,14 +131,14 @@ export default function ServicesSection({ onSelectService }: ServicesSectionProp
             <div>
               <div className="text-xs text-[#c3c7cc]">전화 상담 직통 라인</div>
               <a
-                href="tel:010-5244-6477"
+                href="tel:010-8848-6134"
                 className="text-lg font-bold text-[#ffdead] hover:underline"
               >
-                010-5244-6477
+                010-8848-6134
               </a>
             </div>
             <a
-              href="tel:010-5244-6477"
+              href="tel:010-8848-6134"
               className="w-11 h-11 rounded-full bg-[#fdbe50] text-[#281900] flex items-center justify-center hover:scale-110 transition-transform shadow"
               aria-label="전화 걸기"
             >

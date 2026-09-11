@@ -12,20 +12,24 @@ import {
   Navigation,
   MessageCircle,
   Compass,
+  Search,
 } from 'lucide-react';
-import { QuoteFormData } from '../types';
+import { QuoteFormData, ReservationRecord } from '../types';
 import { MAP_PREVIEW_IMAGE } from '../data/mockData';
+import { saveReservation } from '../utils/reservationStorage';
 
 interface LocationAndQuoteSectionProps {
   preselectedCategory?: string;
   onSubmittedSuccess?: (data: QuoteFormData) => void;
   onOpenDirections?: () => void;
+  onOpenLookup?: (query?: string) => void;
 }
 
 export default function LocationAndQuoteSection({
   preselectedCategory,
   onSubmittedSuccess,
   onOpenDirections,
+  onOpenLookup,
 }: LocationAndQuoteSectionProps) {
   const [formData, setFormData] = useState<QuoteFormData>({
     customerName: '',
@@ -41,8 +45,10 @@ export default function LocationAndQuoteSection({
   const [submittedMessage, setSubmittedMessage] = useState<string | null>(null);
   const [quoteSummary, setQuoteSummary] = useState('');
   const [copiedSummary, setCopiedSummary] = useState(false);
+  const [savedRecord, setSavedRecord] = useState<ReservationRecord | null>(null);
 
   const KAKAO_CHAT_URL = 'https://pf.kakao.com/_xncxlrX/chat';
+  const MASTER_PHONE = '010-8848-6134';
 
   const categoryMap: Record<string, string> = {
     '01': '엔진 및 미션 점검 (경고등, 누유, 출력저하)',
@@ -66,9 +72,10 @@ export default function LocationAndQuoteSection({
     setTimeout(() => setCopied(false), 2500);
   };
 
-  const generateQuoteSummaryText = () => {
+  const generateQuoteSummaryText = (recordId?: string) => {
     const selectedCategoryTitle = categoryMap[formData.serviceCategory] || formData.serviceCategory;
     return `[LJ모터스 정비 견적 문의]
+• 접수번호: ${recordId || '발급중'}
 • 고객명: ${formData.customerName}
 • 연락처: ${formData.phone}
 • 차종/모델: ${formData.carModel}${formData.carYearAndMileage ? ` (${formData.carYearAndMileage})` : ''}
@@ -88,19 +95,31 @@ export default function LocationAndQuoteSection({
       return;
     }
 
-    const summary = generateQuoteSummaryText();
+    const selectedCategoryTitle = categoryMap[formData.serviceCategory] || formData.serviceCategory;
+
+    // 1. Save to local reservation & quote storage
+    const newRecord = saveReservation({
+      customerName: formData.customerName,
+      phone: formData.phone,
+      carModel: formData.carModel + (formData.carYearAndMileage ? ` (${formData.carYearAndMileage})` : ''),
+      serviceCategory: selectedCategoryTitle,
+      notes: formData.symptoms,
+    });
+    setSavedRecord(newRecord);
+
+    const summary = generateQuoteSummaryText(newRecord.id);
     setQuoteSummary(summary);
 
-    // 1. Copy quote summary automatically to clipboard
+    // 2. Copy quote summary automatically to clipboard
     if (navigator.clipboard) {
       navigator.clipboard.writeText(summary).catch(() => {});
     }
 
-    // 2. Open KakaoTalk channel chat automatically
+    // 3. Open KakaoTalk channel chat automatically
     window.open(KAKAO_CHAT_URL, '_blank');
 
     setSubmittedMessage(
-      `[접수 완료] ${formData.customerName} 고객님, ${formData.carModel} 견적 문의 내용이 복사되었으며 카카오톡 상담창이 열렸습니다.`
+      `[접수 완료] ${formData.customerName} 고객님, ${formData.carModel} 견적 문의가 등록되었습니다.`
     );
 
     if (onSubmittedSuccess) {
@@ -120,6 +139,7 @@ export default function LocationAndQuoteSection({
     setSubmittedMessage(null);
     setQuoteSummary('');
     setCopiedSummary(false);
+    setSavedRecord(null);
     setFormData({
       customerName: '',
       phone: '',
@@ -129,6 +149,10 @@ export default function LocationAndQuoteSection({
       symptoms: '',
       agreePrivacy: false,
     });
+  };
+
+  const getSmsLink = () => {
+    return `sms:${MASTER_PHONE}?body=${encodeURIComponent(quoteSummary)}`;
   };
 
   return (
@@ -206,19 +230,16 @@ export default function LocationAndQuoteSection({
                   <div className="flex items-start gap-3 p-4 rounded-lg bg-white border border-gray-200 shadow-sm">
                     <Phone className="w-5 h-5 text-[#7e5700] shrink-0 mt-0.5" />
                     <div>
-                      <div className="text-sm font-bold text-[#0d1c2f]">상담 및 예약 직통</div>
+                      <div className="text-sm font-bold text-[#0d1c2f]">전화상담 및 정비 예약</div>
                       <a
                         href="tel:010-8848-6134"
                         className="text-base font-extrabold text-[#7e5700] mt-0.5 hover:underline block tracking-tight"
                       >
                         010-8848-6134
                       </a>
-                      <a
-                        href="tel:010-5244-6477"
-                        className="text-xs text-gray-500 hover:text-gray-700 mt-0.5 block"
-                      >
-                        대표번호: 010-5244-6477
-                      </a>
+                      <span className="text-xs text-gray-500 mt-0.5 block">
+                        평일 08:30 ~ 18:30 (상담 환영)
+                      </span>
                     </div>
                   </div>
 
@@ -337,26 +358,33 @@ export default function LocationAndQuoteSection({
                 </div>
 
                 <div className="text-center space-y-1">
+                  <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-green-100 text-green-800 text-xs font-bold mb-1">
+                    <CheckCircle2 className="w-3.5 h-3.5" />
+                    <span>견적 문의 등록 완료 • 접수번호: {savedRecord?.id}</span>
+                  </div>
                   <h4 className="text-lg sm:text-xl font-black text-[#0d1c2f]">
-                    카카오톡 상담창으로 자동 연결되었습니다!
+                    카카오톡 채널로 견적 문의 전송 준비 완료!
                   </h4>
                   <p className="text-xs sm:text-sm text-[#44474a] leading-relaxed">
-                    <strong>{formData.customerName}</strong> 고객님이 작성하신 견적 문의 내용이{' '}
+                    <strong>{formData.customerName}</strong> 고객님이 작성하신 견적 내용이{' '}
                     <span className="text-[#7e5700] font-bold">클립보드에 자동 복사</span>되었습니다.
                   </p>
                 </div>
 
                 {/* Kakao Step Guidance Banner */}
-                <div className="p-3.5 bg-[#fee500]/20 border border-[#fee500] rounded-xl text-left text-xs space-y-1">
-                  <div className="font-bold text-[#191919] flex items-center gap-1.5">
+                <div className="p-3.5 bg-amber-100/70 border border-amber-300 rounded-xl text-left text-xs space-y-1.5">
+                  <div className="font-bold text-[#7e5700] flex items-center gap-1.5">
                     <span className="w-4 h-4 rounded-full bg-[#fee500] text-[#191919] flex items-center justify-center text-[10px] font-black shrink-0">
                       !
                     </span>
-                    <span>카카오톡 전송 방법</span>
+                    <span>카카오톡 채널 전송 및 사이트 링크 안내</span>
                   </div>
                   <p className="text-gray-700 leading-relaxed pl-5">
-                    새 창으로 열린 <strong>LJ모터스 카카오톡 채팅창</strong>에{' '}
-                    <span className="font-bold underline decoration-[#7e5700]">붙여넣기 (Ctrl+V 또는 길게 터치 후 붙여넣기)</span>하시면 사장님께 즉시 견적 문의 메시지가 전송됩니다.
+                    카카오톡 보안 정책상 웹사이트에서 고객 채팅창으로 글을 직접 쏘는 것이 불가능하여, 첫 입장 시 채널 기본 웰컴 메시지(사이트 링크)가 뜰 수 있습니다. 새 창으로 열린 <strong>LJ모터스 카카오톡 채팅창</strong>에{' '}
+                    <strong className="underline decoration-[#7e5700]">붙여넣기 (Ctrl+V 또는 길게 터치 후 붙여넣기) 후 전송</strong>을 누르시면 사장님께 즉시 전달됩니다.
+                  </p>
+                  <p className="text-blue-700 font-semibold pl-5 text-[11px]">
+                    💡 모바일 스마트폰에서는 아래 <strong>[문자(SMS)로 즉시 전송]</strong>을 터치하시면 한 번에 사장님 번호로 발송됩니다!
                   </p>
                 </div>
 
@@ -386,23 +414,41 @@ export default function LocationAndQuoteSection({
                     className="w-full py-3.5 rounded-xl bg-[#fee500] hover:bg-[#fad800] text-[#191919] font-black text-sm sm:text-base flex items-center justify-center gap-2 border border-[#e6ce00] shadow-md transition-all hover:scale-[1.01] active:scale-98"
                   >
                     <MessageCircle className="w-4 h-4 sm:w-5 sm:h-5 fill-[#191919]" />
-                    <span>카카오톡 1:1 채팅창 열기 (메시지 전송)</span>
+                    <span>카카오톡 1:1 채팅창 열기 (붙여넣기 후 전송)</span>
                     <ExternalLink className="w-4 h-4" />
                   </a>
 
+                  {/* SMS Button */}
+                  <a
+                    href={getSmsLink()}
+                    className="w-full py-3 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs sm:text-sm flex items-center justify-center gap-2 shadow-sm transition-colors"
+                  >
+                    <Send className="w-3.5 h-3.5" />
+                    <span>문자(SMS)로 사장님께 즉시 전송 (원클릭)</span>
+                  </a>
+
                   <div className="flex flex-col sm:flex-row gap-2">
+                    {onOpenLookup && (
+                      <button
+                        onClick={() => onOpenLookup(formData.phone || formData.customerName)}
+                        className="flex-1 py-2.5 rounded-lg bg-gray-100 hover:bg-gray-200 text-gray-800 font-bold text-xs flex items-center justify-center gap-1.5 border border-gray-300 transition-colors cursor-pointer"
+                      >
+                        <Search className="w-3.5 h-3.5 text-[#7e5700]" />
+                        <span>내 접수 내역 확인하기</span>
+                      </button>
+                    )}
                     <a
                       href="tel:010-8848-6134"
                       className="flex-1 py-2.5 rounded-lg bg-white hover:bg-gray-50 text-gray-800 font-bold text-xs flex items-center justify-center gap-1.5 border border-gray-300 transition-colors"
                     >
                       <Phone className="w-3.5 h-3.5 text-[#7e5700]" />
-                      <span>전화 직통 문의 (010-8848-6134)</span>
+                      <span>전화 직통 문의</span>
                     </a>
                     <button
                       onClick={handleReset}
                       className="flex-1 py-2.5 rounded-lg bg-gray-800 hover:bg-black text-white font-bold text-xs transition-colors cursor-pointer"
                     >
-                      새로운 견적 문의 작성
+                      새로운 문의 작성
                     </button>
                   </div>
                 </div>

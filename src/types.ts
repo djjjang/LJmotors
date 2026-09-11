@@ -48,3 +48,16 @@ export interface QuoteFormData {
   agreePrivacy: boolean;
   preferredDate?: string;
 }
+
+export interface ReservationRecord {
+  id: string;
+  customerName: string;
+  phone: string;
+  carModel: string;
+  serviceCategory: string;
+  preferredDate?: string;
+  preferredTime?: string;
+  notes?: string;
+  createdAt: string;
+  status: '접수완료' | '상담확정' | '정비완료';
+}
