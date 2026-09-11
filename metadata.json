@@ -1,0 +1,8 @@
+{
+  "name": "LJ 모터스 프리미엄 오토케어",
+  "description": "국산차부터 수입차까지 공식 센터 출신 20년 경력 마스터의 일산 원흥역 1급 종합 자동차 전문 정비센터",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
